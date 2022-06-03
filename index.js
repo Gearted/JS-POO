@@ -1,10 +1,14 @@
+// Get the canvas tag
 const canvas = document.querySelector("#container-game");
 
+// Get the 2d context of the canvas
 const ctx = canvas.getContext("2d");
 
+// Put the canvas dimensions equal to the window dimensions
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 
+// DOM elements for UI
 const scoreEl = document.getElementById("scoreEl");
 const startGameBtn = document.getElementById("startGameBtn");
 const modalEl = document.getElementById("modalEl");
@@ -18,6 +22,7 @@ class Entity {
     this.color = "red";
   }
 
+  // method to draw a disc inside the canvas
   draw() {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
@@ -39,6 +44,7 @@ class Projectile extends Player {
     this.velocity = velocity;
   }
 
+  // method to update the position of the disc by adding the velocity to the x and y coordinates
   update() {
     this.draw();
     this.x = this.x + this.velocity.x;
@@ -91,16 +97,20 @@ function init() {
   bigScoreEl.innerText = score;
 }
 
+// function to generate every second a new enemy coming from outside of the screen randomly
 function spawnEnemies() {
   setInterval(() => {
+    // random radius
     const radius = Math.random() * (30 - 4) + 4;
 
+    // random red, green and blue value
     const r = Math.floor(Math.random() * 256);
     const g = Math.floor(Math.random() * 256);
     const b = Math.floor(Math.random() * 256);
-
+    // random rgb color
     const color = `rgb(${r}, ${g}, ${b})`;
 
+    // random value to generate the x and y coordinates
     const randomValue = Math.random();
     let x, y;
     if (randomValue < 0.25) {
@@ -117,27 +127,32 @@ function spawnEnemies() {
       y = canvas.height + radius;
     }
 
+    // calcul of the velocity
     const angle = Math.atan2(player.y - y, player.x - x);
     const velocity = {
       x: Math.cos(angle),
       y: Math.sin(angle),
     };
 
+    // add a new enemy in enemies array
     enemies.push(new Enemy(x, y, radius, color, velocity));
   }, 1000);
 }
 
 let animationId;
 let score = 0;
-
+// animate function executed recursively
 function animate() {
   animationId = requestAnimationFrame(animate);
 
+  // fill the canvas with a rectangle
   ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // draw the player in the canvas
   player.draw();
 
+  // go through the particles array to update all particle positions
   particles.forEach((particle, index) => {
     if (particle.alpha <= 0) {
       particles.splice(index, 1);
@@ -146,6 +161,7 @@ function animate() {
     }
   });
 
+  // go through the projectiles array to update all projectile positions
   projectiles.forEach((projectile, index) => {
     if (
       projectile.x - projectile.radius < 0 ||
@@ -158,13 +174,16 @@ function animate() {
     projectile.update();
   });
 
+  // go through the enemies array to update all enemy positions
   enemies.forEach((enemy, enemyIndex) => {
+    // detection of collision between a projectile and an enemy
     projectiles.forEach((projectile, projectileIndex) => {
       const distance = Math.hypot(
         projectile.x - enemy.x,
         projectile.y - enemy.y
       );
       if (distance - projectile.radius - enemy.radius <= 0) {
+        // particles creation
         for (let i = 0; i < 8; i++) {
           particles.push(
             new Particle(
@@ -179,8 +198,9 @@ function animate() {
             )
           );
         }
-
+        // reduce the radius of enemy or remove enemy
         if (enemy.radius - 10 > 5) {
+          // increase our score
           score += 100;
           scoreEl.innerText = score;
           gsap.to(enemy, {
@@ -190,6 +210,7 @@ function animate() {
             projectiles.splice(projectileIndex, 1);
           }, 0);
         } else {
+          // increase our score
           score += 250;
           scoreEl.innerText = score;
           setTimeout(() => {
@@ -200,8 +221,9 @@ function animate() {
       }
     });
 
+    // detection of collision between the player and an enemy
     const distPlayerEnemy = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-
+    // end game
     if (distPlayerEnemy - enemy.radius - player.radius <= 0) {
       cancelAnimationFrame(animationId);
       bigScoreEl.innerText = score;
@@ -212,6 +234,7 @@ function animate() {
   });
 }
 
+// click listener to add a new projectile in direction of the mouse pointer
 window.addEventListener("click", (event) => {
   const angle = Math.atan2(event.clientY - player.y, event.clientX - player.x);
   const velocity = {
@@ -219,6 +242,7 @@ window.addEventListener("click", (event) => {
     y: Math.sin(angle) * 5,
   };
 
+  // create new projectile
   const projectile = new Projectile(player.x, player.y, 5, "white", velocity);
   projectiles.push(projectile);
 });
